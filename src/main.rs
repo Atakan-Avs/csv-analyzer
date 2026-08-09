@@ -1,18 +1,22 @@
-use std::fs;
-use std::io;
-
-fn main() -> io::Result<()> {
+fn main() -> Result<(), csv::Error> {
     let file_path = "data/tips.csv";
-    let contents = fs::read_to_string(file_path)?;
+    let mut reader = csv::Reader::from_path(file_path)?;
 
-    println!("Loaded {} bytes from {file_path}", contents.len());
+    let headers = reader.headers()?;
+    println!("Headers: {headers:?}");
 
-    let header = contents.lines().next();
+    let mut record_count = 0;
 
-    match header {
-        Some(line) => println!("Header: {line}"),
-        None => println!("The CSV file is empty"),
+    for result in reader.records() {
+        let record = result?;
+        record_count += 1;
+
+        if record_count == 1 {
+            println!("First record: {record:?}");
+        }
     }
+
+    println!("Parsed {record_count} records from {file_path}");
 
     Ok(())
 }
