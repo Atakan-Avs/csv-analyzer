@@ -1,6 +1,10 @@
+use std::fs::File;
+
 fn main() -> Result<(), csv::Error> {
     let file_path = "data/tips.csv";
-    let mut reader = csv::Reader::from_path(file_path)?;
+
+    let file = File::open(file_path)?;
+    let mut reader = csv::Reader::from_reader(file);
 
     let headers = reader.headers()?;
     println!("Headers: {headers:?}");
