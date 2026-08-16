@@ -21,11 +21,15 @@ fn main() -> Result<(), csv::Error> {
     let headers = reader.headers()?;
     println!("Headers: {headers:?}");
 
-    let mut record_count = 0;
+    let mut record_count: u32 = 0;
+    let mut total_bill = 0.0;
+    let mut total_tip = 0.0;
 
     for result in reader.deserialize::<TipRecord>() {
         let record = result?;
         record_count += 1;
+        total_bill += record.total_bill;
+        total_tip += record.tip;
 
         if record_count == 1 {
             println!(
@@ -42,6 +46,13 @@ fn main() -> Result<(), csv::Error> {
     }
 
     println!("Parsed {record_count} records from {file_path}");
+    println!("Total bill: {total_bill:.2}");
+    println!("Total tips: {total_tip:.2}");
+
+    if record_count > 0 {
+        let average_tip = total_tip / f64::from(record_count);
+        println!("Average tip: {average_tip:.2}");
+    }
 
     Ok(())
 }
