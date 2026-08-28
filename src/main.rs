@@ -13,9 +13,12 @@ struct TipRecord {
 }
 
 fn main() -> Result<(), csv::Error> {
-    let file_path = "data/tips.csv";
+    let Some(file_path) = std::env::args().nth(1) else {
+        eprintln!("Usage: csv-analyzer <file_path>");
+        std::process::exit(1);
+    };
 
-    let file = File::open(file_path)?;
+    let file = File::open(&file_path)?;
     let mut reader = csv::Reader::from_reader(file);
 
     let headers = reader.headers()?;
