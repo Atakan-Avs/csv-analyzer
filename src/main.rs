@@ -27,12 +27,16 @@ fn main() -> Result<(), csv::Error> {
     let mut record_count: u32 = 0;
     let mut total_bill = 0.0;
     let mut total_tip = 0.0;
+    let mut max_tip = 0.0;
 
     for result in reader.deserialize::<TipRecord>() {
         let record = result?;
         record_count += 1;
         total_bill += record.total_bill;
         total_tip += record.tip;
+        if record_count == 1 || record.tip > max_tip {
+            max_tip = record.tip;
+        }
 
         if record_count == 1 {
             println!(
@@ -55,6 +59,7 @@ fn main() -> Result<(), csv::Error> {
     if record_count > 0 {
         let average_tip = total_tip / f64::from(record_count);
         println!("Average tip: {average_tip:.2}");
+        println!("Highest tip: {max_tip:.2}");
     }
 
     Ok(())
