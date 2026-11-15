@@ -20,7 +20,13 @@ fn main() -> Result<(), csv::Error> {
 
     let day_filter = std::env::args().nth(2);
 
-    let file = File::open(&file_path)?;
+    let file = match File::open(&file_path) {
+        Ok(file) => file,
+        Err(error) => {
+            eprintln!("Failed to open CSV file '{file_path}': {error}");
+            std::process::exit(1);
+        }
+    };
     let mut reader = csv::Reader::from_reader(file);
 
     let headers = reader.headers()?;
