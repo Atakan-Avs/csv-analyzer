@@ -14,9 +14,11 @@ struct TipRecord {
 
 fn main() -> Result<(), csv::Error> {
     let Some(file_path) = std::env::args().nth(1) else {
-        eprintln!("Usage: csv-analyzer <file_path>");
+        eprintln!("Usage: csv-analyzer <file_path> [day]");
         std::process::exit(1);
     };
+
+    let day_filter = std::env::args().nth(2);
 
     let file = File::open(&file_path)?;
     let mut reader = csv::Reader::from_reader(file);
@@ -31,6 +33,11 @@ fn main() -> Result<(), csv::Error> {
 
     for result in reader.deserialize::<TipRecord>() {
         let record = result?;
+        if let Some(day) = &day_filter
+            && record.day != *day
+        {
+            continue;
+        }
         record_count += 1;
         total_bill += record.total_bill;
         total_tip += record.tip;
