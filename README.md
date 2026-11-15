@@ -6,6 +6,7 @@ A small Rust command-line tool that reads a CSV file of restaurant bills and tip
 
 ```bash
 cargo run -- data/tips.csv
+cargo run -- data/tips.csv Sun
 ```
 
 The sample file comes from Seaborn. To analyze another file, pass its path in place of `data/tips.csv`. The file must include these columns:
