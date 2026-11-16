@@ -66,14 +66,18 @@ fn main() -> Result<(), csv::Error> {
     }
 
     println!("Parsed {record_count} records from {file_path}");
+
+    if record_count == 0 {
+        println!("No records to analyze.");
+        return Ok(());
+    }
+
     println!("Total bill: {total_bill:.2}");
     println!("Total tips: {total_tip:.2}");
 
-    if record_count > 0 {
-        let average_tip = total_tip / f64::from(record_count);
-        println!("Average tip: {average_tip:.2}");
-        println!("Highest tip: {max_tip:.2}");
-    }
+    let average_tip = total_tip / f64::from(record_count);
+    println!("Average tip: {average_tip:.2}");
+    println!("Highest tip: {max_tip:.2}");
 
     Ok(())
 }

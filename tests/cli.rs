@@ -44,3 +44,21 @@ fn reports_missing_csv_file() {
     let stderr = String::from_utf8(output.stderr).expect("expected UTF-8 output");
     assert!(stderr.contains("Failed to open CSV file 'data/__missing_file_for_check__.csv':"));
 }
+
+#[test]
+fn reports_no_records_for_unmatched_day() {
+    let output = Command::new(env!("CARGO_BIN_EXE_csv-analyzer"))
+        .args(["data/tips.csv", "Mon"])
+        .output()
+        .expect("failed to run csv-analyzer");
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8(output.stdout).expect("expected UTF-8 output");
+    assert!(stdout.contains("Parsed 0 records"));
+    assert!(stdout.contains("No records to analyze."));
+    assert!(!stdout.contains("Total bill:"));
+    assert!(!stdout.contains("Total tips:"));
+    assert!(!stdout.contains("Average tip:"));
+    assert!(!stdout.contains("Highest tip:"));
+}
