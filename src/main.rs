@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use std::fs::File;
 
+const USAGE: &str = "Usage: csv-analyzer <file_path> [day]";
+
 #[derive(Deserialize)]
 struct TipRecord {
     total_bill: f64,
@@ -14,12 +16,12 @@ struct TipRecord {
 
 fn main() -> Result<(), csv::Error> {
     let Some(file_path) = std::env::args().nth(1) else {
-        eprintln!("Usage: csv-analyzer <file_path> [day]");
+        eprintln!("{USAGE}");
         std::process::exit(1);
     };
 
     if file_path == "--help" {
-        println!("Usage: csv-analyzer <file_path> [day]");
+        println!("{USAGE}");
         println!("Example: csv-analyzer data/tips.csv Sun");
         return Ok(());
     }
