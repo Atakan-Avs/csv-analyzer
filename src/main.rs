@@ -18,6 +18,12 @@ fn main() -> Result<(), csv::Error> {
         std::process::exit(1);
     };
 
+    if file_path == "--help" {
+        println!("Usage: csv-analyzer <file_path> [day]");
+        println!("Example: csv-analyzer data/tips.csv Sun");
+        return Ok(());
+    }
+
     let day_filter = std::env::args().nth(2);
 
     let file = match File::open(&file_path) {

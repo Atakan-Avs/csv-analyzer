@@ -62,3 +62,18 @@ fn reports_no_records_for_unmatched_day() {
     assert!(!stdout.contains("Average tip:"));
     assert!(!stdout.contains("Highest tip:"));
 }
+
+#[test]
+fn shows_help() {
+    let output = Command::new(env!("CARGO_BIN_EXE_csv-analyzer"))
+        .arg("--help")
+        .output()
+        .expect("failed to run csv-analyzer");
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8(output.stdout).expect("expected UTF-8 output");
+    assert!(stdout.contains("Usage: csv-analyzer <file_path> [day]"));
+    assert!(stdout.contains("Example: csv-analyzer data/tips.csv Sun"));
+    assert!(output.stderr.is_empty());
+}
