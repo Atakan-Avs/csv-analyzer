@@ -15,7 +15,9 @@ struct TipRecord {
 }
 
 fn main() -> Result<(), csv::Error> {
-    let Some(file_path) = std::env::args().nth(1) else {
+    let mut args = std::env::args().skip(1);
+
+    let Some(file_path) = args.next() else {
         eprintln!("{USAGE}");
         std::process::exit(1);
     };
@@ -26,7 +28,13 @@ fn main() -> Result<(), csv::Error> {
         return Ok(());
     }
 
-    let day_filter = std::env::args().nth(2);
+    let day_filter = args.next();
+
+    if args.next().is_some() {
+        eprintln!("Too many arguments.");
+        eprintln!("{USAGE}");
+        std::process::exit(1);
+    }
 
     let file = match File::open(&file_path) {
         Ok(file) => file,

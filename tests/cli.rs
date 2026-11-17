@@ -77,3 +77,18 @@ fn shows_help() {
     assert!(stdout.contains("Example: csv-analyzer data/tips.csv Sun"));
     assert!(output.stderr.is_empty());
 }
+
+#[test]
+fn rejects_extra_arguments() {
+    let output = Command::new(env!("CARGO_BIN_EXE_csv-analyzer"))
+        .args(["data/tips.csv", "Sun", "extra"])
+        .output()
+        .expect("failed to run csv-analyzer");
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+
+    let stderr = String::from_utf8(output.stderr).expect("expected UTF-8 output");
+    assert!(stderr.contains("Too many arguments."));
+    assert!(stderr.contains("Usage: csv-analyzer <file_path> [day]"));
+}
