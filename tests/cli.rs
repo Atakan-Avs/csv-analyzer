@@ -92,3 +92,21 @@ fn rejects_extra_arguments() {
     assert!(stderr.contains("Too many arguments."));
     assert!(stderr.contains("Usage: csv-analyzer <file_path> [day]"));
 }
+
+#[test]
+fn rejects_invalid_tip_value() {
+    let output = Command::new(env!("CARGO_BIN_EXE_csv-analyzer"))
+        .arg("tests/fixtures/invalid_tip.csv")
+        .output()
+        .expect("failed to run csv-analyzer");
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(!output.stderr.is_empty());
+
+    let stdout = String::from_utf8(output.stdout).expect("expected UTF-8 output");
+    assert!(stdout.contains("First record:"));
+    assert!(!stdout.contains("Total bill:"));
+    assert!(!stdout.contains("Total tips:"));
+    assert!(!stdout.contains("Average tip:"));
+    assert!(!stdout.contains("Highest tip:"));
+}
