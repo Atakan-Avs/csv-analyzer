@@ -1,0 +1,3 @@
+total_bill,tip,sex,smoker,day,time,size
+16.99,1.01,Female,No,Sun,Dinner,2
+10.00,abc,Male,No,Sun,Dinner,2
