@@ -101,7 +101,10 @@ fn rejects_invalid_tip_value() {
         .expect("failed to run csv-analyzer");
 
     assert_eq!(output.status.code(), Some(1));
-    assert!(!output.stderr.is_empty());
+    let stderr = String::from_utf8(output.stderr).expect("expected UTF-8 output");
+    assert!(
+        stderr.starts_with("Failed to read a CSV record from 'tests/fixtures/invalid_tip.csv':")
+    );
 
     let stdout = String::from_utf8(output.stdout).expect("expected UTF-8 output");
     assert!(stdout.contains("First record:"));

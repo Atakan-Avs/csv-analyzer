@@ -54,7 +54,13 @@ fn main() -> Result<(), csv::Error> {
     let mut max_tip = 0.0;
 
     for result in reader.deserialize::<TipRecord>() {
-        let record = result?;
+        let record = match result {
+            Ok(record) => record,
+            Err(error) => {
+                eprintln!("Failed to read a CSV record from '{file_path}': {error}");
+                std::process::exit(1);
+            }
+        };
         if let Some(day) = &day_filter
             && record.day != *day
         {
