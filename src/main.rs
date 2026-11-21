@@ -1,5 +1,7 @@
 use serde::Deserialize;
+use std::collections::BTreeMap;
 use std::fs::File;
+use std::io;
 
 const USAGE: &str = "Usage: csv-analyzer <file_path> [day]";
 
@@ -14,6 +16,50 @@ struct TipRecord {
     size: u8,
 }
 
+struct CsvData {
+    headers: csv::StringRecord,
+    rows: BTreeMap<String, csv::StringRecord>,
+}
+
+fn read_rows_by_id(path: &str) -> Result<CsvData, csv::Error> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let headers = reader.headers()?.clone();
+    let id_column = headers
+        .iter()
+        .position(|header| header == "id")
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Missing 'id' column in '{path}'"),
+            )
+        })?;
+
+    let mut rows = BTreeMap::new();
+
+    for result in reader.records() {
+        let row = result?;
+        let Some(id) = row.get(id_column).filter(|id| !id.trim().is_empty()) else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Empty id in '{path}'"),
+            )
+            .into());
+        };
+
+        if rows.contains_key(id) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Duplicate id '{id}' in '{path}'"),
+            )
+            .into());
+        }
+
+        rows.insert(id.to_owned(), row);
+    }
+
+    Ok(CsvData { headers, rows })
+}
+
 fn main() -> Result<(), csv::Error> {
     let mut args = std::env::args().skip(1);
 
@@ -25,6 +71,52 @@ fn main() -> Result<(), csv::Error> {
     if file_path == "--help" {
         println!("{USAGE}");
         println!("Example: csv-analyzer data/tips.csv Sun");
+        return Ok(());
+    }
+
+    if file_path == "diff" {
+        let (Some(before_path), Some(after_path), None) = (args.next(), args.next(), args.next())
+        else {
+            eprintln!("Usage: csv-analyzer diff <before.csv> <after.csv>");
+            std::process::exit(1);
+        };
+
+        let before = read_rows_by_id(&before_path)?;
+        let after = read_rows_by_id(&after_path)?;
+
+        if before.headers != after.headers {
+            eprintln!("CSV files must have the same columns in the same order.");
+            std::process::exit(1);
+        }
+
+        for id in after.rows.keys() {
+            if !before.rows.contains_key(id) {
+                println!("Added: id={id}");
+            }
+        }
+
+        for id in before.rows.keys() {
+            if !after.rows.contains_key(id) {
+                println!("Removed: id={id}");
+            }
+        }
+
+        for (id, before_row) in &before.rows {
+            let Some(after_row) = after.rows.get(id) else {
+                continue;
+            };
+
+            for (column, (old, new)) in before
+                .headers
+                .iter()
+                .zip(before_row.iter().zip(after_row.iter()))
+            {
+                if old != new {
+                    println!("Changed: id={id}, {column}: {old} -> {new}");
+                }
+            }
+        }
+
         return Ok(());
     }
 
