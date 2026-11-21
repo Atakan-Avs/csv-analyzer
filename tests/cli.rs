@@ -113,3 +113,49 @@ fn rejects_invalid_tip_value() {
     assert!(!stdout.contains("Average tip:"));
     assert!(!stdout.contains("Highest tip:"));
 }
+
+#[test]
+fn reports_added_removed_and_changed_csv_rows() {
+    let output = Command::new(env!("CARGO_BIN_EXE_csv-analyzer"))
+        .args([
+            "diff",
+            "tests/fixtures/diff_before.csv",
+            "tests/fixtures/diff_after.csv",
+        ])
+        .output()
+        .expect("failed to run csv-analyzer");
+
+    assert!(output.status.success());
+    assert!(output.stderr.is_empty());
+
+    let stdout = String::from_utf8(output.stdout).expect("expected UTF-8 output");
+    assert_eq!(
+        stdout.lines().collect::<Vec<_>>(),
+        vec![
+            "Added: id=102",
+            "Removed: id=101",
+            "Changed: id=100, empty_weight: 12000 -> 12450",
+        ]
+    );
+}
+
+#[test]
+fn rejects_different_csv_column_order() {
+    let output = Command::new(env!("CARGO_BIN_EXE_csv-analyzer"))
+        .args([
+            "diff",
+            "tests/fixtures/diff_before.csv",
+            "tests/fixtures/diff_reordered_columns.csv",
+        ])
+        .output()
+        .expect("failed to run csv-analyzer");
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty());
+
+    let stderr = String::from_utf8(output.stderr).expect("expected UTF-8 output");
+    assert_eq!(
+        stderr.trim(),
+        "CSV files must have the same columns in the same order."
+    );
+}
