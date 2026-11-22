@@ -21,16 +21,16 @@ struct CsvData {
     rows: BTreeMap<String, csv::StringRecord>,
 }
 
-fn read_rows_by_id(path: &str) -> Result<CsvData, csv::Error> {
+fn read_rows_by_key(path: &str, key: &str) -> Result<CsvData, csv::Error> {
     let mut reader = csv::Reader::from_path(path)?;
     let headers = reader.headers()?.clone();
-    let id_column = headers
+    let key_column = headers
         .iter()
-        .position(|header| header == "id")
+        .position(|header| header == key)
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("Missing 'id' column in '{path}'"),
+                format!("Missing '{key}' column in '{path}'"),
             )
         })?;
 
@@ -38,23 +38,23 @@ fn read_rows_by_id(path: &str) -> Result<CsvData, csv::Error> {
 
     for result in reader.records() {
         let row = result?;
-        let Some(id) = row.get(id_column).filter(|id| !id.trim().is_empty()) else {
+        let Some(key_value) = row.get(key_column).filter(|value| !value.trim().is_empty()) else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("Empty id in '{path}'"),
+                format!("Empty {key} in '{path}'"),
             )
             .into());
         };
 
-        if rows.contains_key(id) {
+        if rows.contains_key(key_value) {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("Duplicate id '{id}' in '{path}'"),
+                format!("Duplicate {key} '{key_value}' in '{path}'"),
             )
             .into());
         }
 
-        rows.insert(id.to_owned(), row);
+        rows.insert(key_value.to_owned(), row);
     }
 
     Ok(CsvData { headers, rows })
@@ -75,14 +75,25 @@ fn main() -> Result<(), csv::Error> {
     }
 
     if file_path == "diff" {
-        let (Some(before_path), Some(after_path), None) = (args.next(), args.next(), args.next())
-        else {
-            eprintln!("Usage: csv-analyzer diff <before.csv> <after.csv>");
+        const DIFF_USAGE: &str =
+            "Usage: csv-analyzer diff <before.csv> <after.csv> [--key <column>]";
+
+        let (Some(before_path), Some(after_path)) = (args.next(), args.next()) else {
+            eprintln!("{DIFF_USAGE}");
             std::process::exit(1);
         };
 
-        let before = read_rows_by_id(&before_path)?;
-        let after = read_rows_by_id(&after_path)?;
+        let key = match (args.next(), args.next(), args.next()) {
+            (None, None, None) => String::from("id"),
+            (Some(flag), Some(key), None) if flag == "--key" && !key.trim().is_empty() => key,
+            _ => {
+                eprintln!("{DIFF_USAGE}");
+                std::process::exit(1);
+            }
+        };
+
+        let before = read_rows_by_key(&before_path, &key)?;
+        let after = read_rows_by_key(&after_path, &key)?;
 
         if before.headers != after.headers {
             eprintln!("CSV files must have the same columns in the same order.");
@@ -91,13 +102,13 @@ fn main() -> Result<(), csv::Error> {
 
         for id in after.rows.keys() {
             if !before.rows.contains_key(id) {
-                println!("Added: id={id}");
+                println!("Added: {key}={id}");
             }
         }
 
         for id in before.rows.keys() {
             if !after.rows.contains_key(id) {
-                println!("Removed: id={id}");
+                println!("Removed: {key}={id}");
             }
         }
 
@@ -112,7 +123,7 @@ fn main() -> Result<(), csv::Error> {
                 .zip(before_row.iter().zip(after_row.iter()))
             {
                 if old != new {
-                    println!("Changed: id={id}, {column}: {old} -> {new}");
+                    println!("Changed: {key}={id}, {column}: {old} -> {new}");
                 }
             }
         }
